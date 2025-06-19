@@ -26,9 +26,12 @@ let tasks = [
     }
 ]
 
+let nextId = 4;
+
 app.get("/tasks", (req,res) => {
     res.json(tasks);
 });
+
 
 app.get("/tasks/:id", (req,res) => {
     const {id} = req.params;
@@ -42,7 +45,6 @@ app.get("/tasks/:id", (req,res) => {
     }
 });
 
-let nextId = 4;
 app.post('/tasks', (req,res) => {
     const {title, description, completed } = req.body;
     if( !title || !description) {
@@ -99,6 +101,10 @@ app.delete('/tasks/:id', (req,res) => {
         res.status(404).json({message: 'Task not found'});
     }
 });
+
+app.get('/', (req,res) => {
+    res.send("Welcome to Task Manager API");
+})
 
 app.listen(port, (err) => {
     if (err) {
