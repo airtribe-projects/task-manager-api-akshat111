@@ -8,15 +8,15 @@ app.use(express.urlencoded({ extended: true }));
 let tasks = [
     {
         id:1,
-        title: "learn Node.js",
-        description: "learn nodejs from the course",
-        completed: false
+        title: "Set up environment",
+        description: "Install Node.js, npm, and git",
+        completed: true
     },
     {
         id:2,
         title: "learn Reactjs",
         description: "learn reactjs from the course",
-        completed: true
+        completed: false
     },
     {
         id: 3,
@@ -28,8 +28,20 @@ let tasks = [
 
 let nextId = 4;
 
+app.get('/', (req,res) => {
+    res.send("Welcome to Task Manager API");
+})
+
 app.get("/tasks", (req,res) => {
-    res.json(tasks);
+    let filteredTasks = tasks;
+    const { completed } = req.query;
+
+    if( completed !== undefined) {
+        const isCompleted = completed.toLowerCase() === 'true';
+
+        filteredTasks = filteredTasks.filter(task => task.completed === isCompleted);
+    }
+    res.json(filteredTasks);
 });
 
 
@@ -48,11 +60,17 @@ app.get("/tasks/:id", (req,res) => {
 app.post('/tasks', (req,res) => {
     const {title, description, completed } = req.body;
     if( !title || !description) {
-        return res.status(400).json({ message : "Title and description are required."});
+        return res.status(400).json({ message : "Title and description both are required."});
     }
 
-    const isCompleted = typeof completed == 'boolean' ? completed : false;
-    const newID = String(nextId++);
+    let isCompleted = false; 
+    if (completed !== undefined) {
+        if (typeof completed !== 'boolean') {
+            return res.status(400).json({ message: 'Completed status must be a boolean value.' });
+        }
+        isCompleted = completed;
+    }
+    const newID = nextId++;
 
     const newTask = {
         id: newID,
@@ -76,6 +94,14 @@ app.put('/tasks/:id' , (req,res) => {
         return res.status(404).json({message: 'Task not found'});
     }
 
+    if (title === undefined && description === undefined && completed === undefined) {
+    return res.status(400).json({ message: "At least one field (title, description, or completed) is required." });
+}
+    if (completed !== undefined && typeof completed !== 'boolean') {
+        return res.status(400).json({ message: 'Completed status must be a boolean value.' });
+    }
+
+
     const existingTask = tasks[taskIndex];
 
     const updatedTask = {
@@ -96,15 +122,13 @@ app.delete('/tasks/:id', (req,res) => {
     tasks = tasks.filter(t => t.id !== parseInt(id));
 
     if(tasks.length < initialLength) {
-        res.status(204).send();
+        res.status(200).json({ message : "Task deleted"});
     } else {
         res.status(404).json({message: 'Task not found'});
     }
 });
 
-app.get('/', (req,res) => {
-    res.send("Welcome to Task Manager API");
-})
+
 
 app.listen(port, (err) => {
     if (err) {
